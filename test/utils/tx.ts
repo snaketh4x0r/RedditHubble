@@ -61,6 +61,18 @@ export class TxTransfer {
         );
     }
 
+    public extended() {
+        return {
+            fromIndex: this.fromIndex,
+            toIndex: this.toIndex,
+            amount: this.amount,
+            signature: this.signature,
+            nonce: this.nonce,
+            tokenType: 0,
+            txType: 0
+        };
+    }
+
     public encode(prefix: boolean = false): string {
         let sender = web3.utils.padLeft(
             web3.utils.toHex(this.fromIndex),

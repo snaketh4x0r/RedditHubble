@@ -14,6 +14,14 @@ contract TestTx {
         return Tx.serialize(txs);
     }
 
+    function transfer_serializeFromEncodedBytes(bytes[] memory txs)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return Tx.serialize(txs);
+    }
+
     function transfer_hasExcessData(bytes memory txs)
         public
         pure

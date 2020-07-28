@@ -164,6 +164,7 @@ library Tx {
                 serialized[j + off] = _tx[j];
             }
         }
+        return serialized;
     }
 
     function serialize(Transfer[] memory txs)

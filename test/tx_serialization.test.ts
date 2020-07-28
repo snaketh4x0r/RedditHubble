@@ -1,5 +1,9 @@
 const TestTx = artifacts.require("TestTx");
-import { TestTxInstance } from "../types/truffle-contracts";
+const RollupUtilsLib = artifacts.require("RollupUtils");
+import {
+    TestTxInstance,
+    RollupUtilsInstance
+} from "../types/truffle-contracts";
 import {
     TxTransfer,
     serialize,
@@ -10,12 +14,12 @@ import {
     // TxCreate,
     Tx
 } from "./utils/tx";
-import { init as mclInit } from "./utils/mcl";
 
 contract("Tx Serialization", accounts => {
     let c: TestTxInstance;
+    let rollupUtils: RollupUtilsInstance;
     before(async function() {
-        await mclInit();
+        rollupUtils = await RollupUtilsLib.new();
         c = await TestTx.new();
     });
     it("parse transfer transaction", async function() {
@@ -47,6 +51,31 @@ contract("Tx Serialization", accounts => {
         }
         const { serialized } = serialize(txs);
         const _serialized = await c.transfer_serialize(txs);
+        assert.equal(serialized, _serialized);
+    });
+    it("transfer trasaction casting", async function() {
+        const txSize = 1;
+        const txs = [];
+        const txsInBytes = [];
+        for (let i = 0; i < txSize; i++) {
+            const tx = TxTransfer.rand();
+            const extended = tx.extended();
+            const bytes = await rollupUtils.BytesFromTxDeconstructed(
+                extended.txType,
+                extended.fromIndex,
+                extended.toIndex,
+                extended.tokenType,
+                extended.nonce,
+                extended.amount,
+                extended.signature
+            );
+            txs.push(tx);
+            txsInBytes.push(bytes);
+        }
+        const { serialized } = serialize(txs);
+        const _serialized = await c.transfer_serializeFromEncodedBytes(
+            txsInBytes
+        );
         assert.equal(serialized, _serialized);
     });
     // it("parse airdrop transaction", async function() {
