@@ -414,6 +414,7 @@ library RollupUtils {
         pure
         returns (Types.Transaction memory)
     {
+        // TODO: use txBytes.transfer_transfer_encodedFromBytes(...)
         Types.Transaction memory transaction;
         (
             transaction.txType,
