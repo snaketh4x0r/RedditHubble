@@ -58,29 +58,4 @@ contract("Tx Serialization", accounts => {
         const _serialized = await c.transfer_serialize(txs);
         assert.equal(serialized, _serialized);
     });
-    it("transfer trasaction casting", async function() {
-        const txSize = 1;
-        const txs = [];
-        const txsInBytes = [];
-        for (let i = 0; i < txSize; i++) {
-            const tx = TxTransfer.rand();
-            const extended = tx.extended();
-            const bytes = await rollupUtils.BytesFromTxDeconstructed(
-                extended.txType,
-                extended.fromIndex,
-                extended.toIndex,
-                extended.tokenType,
-                extended.nonce,
-                extended.amount,
-                extended.signature
-            );
-            txs.push(tx);
-            txsInBytes.push(bytes);
-        }
-        const { serialized } = serialize(txs);
-        const _serialized = await c.transfer_serializeFromEncodedBytes(
-            txsInBytes
-        );
-        assert.equal(serialized, _serialized);
-    });
 });
