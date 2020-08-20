@@ -1,24 +1,16 @@
 pragma solidity ^0.5.15;
 pragma experimental ABIEncoderV2;
-import { ParamManager } from "./libs/ParamManager.sol";
-import { Governance } from "./Governance.sol";
-import { NameRegistry as Registry } from "./NameRegistry.sol";
 
 contract MerkleTreeUtils {
     // The default hashes
     bytes32[] public defaultHashes;
     uint256 public MAX_DEPTH;
-    Governance public governance;
 
     /**
      * @notice Initialize a new MerkleTree contract, computing the default hashes for the merkle tree (MT)
      */
-    constructor(address _registryAddr) public {
-        Registry nameRegistry = Registry(_registryAddr);
-        governance = Governance(
-            nameRegistry.getContractDetails(ParamManager.Governance())
-        );
-        MAX_DEPTH = governance.MAX_DEPTH();
+    constructor(uint256 maxDepth) public {
+        MAX_DEPTH = maxDepth;
         defaultHashes = new bytes32[](MAX_DEPTH);
         // Calculate & set the default hashes
         setDefaultHashes(MAX_DEPTH);
@@ -55,18 +47,6 @@ contract MerkleTreeUtils {
 
     function getRoot(uint256 index) public view returns (bytes32) {
         return defaultHashes[index];
-    }
-
-    function getDefaultHashAtLevel(uint256 index)
-        public
-        view
-        returns (bytes32)
-    {
-        return defaultHashes[index];
-    }
-
-    function keecakHash(bytes memory data) public pure returns (bytes32) {
-        return keccak256(data);
     }
 
     /**
@@ -282,30 +262,6 @@ contract MerkleTreeUtils {
         returns (uint8)
     {
         return uint8((_intVal >> _index) & 1);
-    }
-
-    /**
-     * @notice Get the right sibling key. Note that these keys overwrite the first bit of the hash
-               to signify if it is on the right side of the parent or on the left
-     * @param _parent The parent node
-     * @return the key for the left sibling (0 as the first bit)
-     */
-    function getLeftSiblingKey(bytes32 _parent) public pure returns (bytes32) {
-        return
-            _parent &
-            0x0111111111111111111111111111111111111111111111111111111111111111;
-    }
-
-    /**
-     * @notice Get the right sibling key. Note that these keys overwrite the first bit of the hash
-               to signify if it is on the right side of the parent or on the left
-     * @param _parent The parent node
-     * @return the key for the right sibling (1 as the first bit)
-     */
-    function getRightSiblingKey(bytes32 _parent) public pure returns (bytes32) {
-        return
-            _parent |
-            0x1000000000000000000000000000000000000000000000000000000000000000;
     }
 
     function pathToIndex(uint256 path, uint256 height)

@@ -42,7 +42,7 @@ contract IncrementalTree {
             merkleUtils.getZeroRoot(),
             merkleUtils.getMaxTreeDepth()
         );
-        bytes32 zero = merkleUtils.getDefaultHashAtLevel(0);
+        bytes32 zero = merkleUtils.getRoot(0);
         for (uint8 i = 1; i < governance.MAX_DEPTH(); i++) {
             tree.filledSubtrees[i] = zero;
         }
