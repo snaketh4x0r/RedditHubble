@@ -322,7 +322,8 @@ contract Rollup is RollupHelpers {
      */
     function disputeBatch(
         uint256 _batch_id,
-        Types.CommitmentInclusionProof memory commitmentMP,
+        Types.CommitmentInclusionProof memory previousCommitmentMP,
+        Types.CommitmentInclusionProof memory fraudulentCommitmentMP,
         Types.AccountMerkleProof[] memory accountProofs
     ) public {
         {
@@ -345,34 +346,61 @@ contract Rollup is RollupHelpers {
         // verify is the commitment exits in the batch
         {
             require(
+                fraudulentCommitmentMP.pathToCommitment == 0 ||
+                    (fraudulentCommitmentMP.pathToCommitment - 1 ==
+                        previousCommitmentMP.pathToCommitment),
+                "Invalid previous commiitment"
+            );
+            require(
                 merkleUtils.verifyLeaf(
                     batches[_batch_id].commitmentRoot,
                     RollupUtils.CommitmentToHash(
-                        commitmentMP.commitment.stateRoot,
-                        commitmentMP.commitment.accountRoot,
-                        commitmentMP.commitment.signature,
-                        commitmentMP.commitment.txs,
-                        uint8(commitmentMP.commitment.batchType)
+                        fraudulentCommitmentMP.commitment.stateRoot,
+                        fraudulentCommitmentMP.commitment.accountRoot,
+                        fraudulentCommitmentMP.commitment.signature,
+                        fraudulentCommitmentMP.commitment.txs,
+                        uint8(fraudulentCommitmentMP.commitment.batchType)
                     ),
-                    commitmentMP.pathToCommitment,
-                    commitmentMP.witness
+                    fraudulentCommitmentMP.pathToCommitment,
+                    fraudulentCommitmentMP.witness
                 ),
                 "Commitment not present in batch"
             );
 
             require(
-                commitmentMP.commitment.txs.length != 0,
+                fraudulentCommitmentMP.commitment.length != 0,
                 "Cannot dispute blocks with no transaction"
+            );
+            bytes32 root;
+            if (fraudulentCommitmentMP.pathToCommitment == 0) {
+                root = batches[_batch_id - 1].commitmentRoot;
+            } else {
+                root = batches[_batch_id].commitmentRoot;
+            }
+            require(
+                merkleUtils.verifyLeaf(
+                    root,
+                    RollupUtils.CommitmentToHash(
+                        previousCommitmentMP.commitment.stateRoot,
+                        previousCommitmentMP.commitment.accountRoot,
+                        previousCommitmentMP.commitment.txHashCommitment,
+                        uint8(previousCommitmentMP.commitment.batchType)
+                    ),
+                    previousCommitmentMP.pathToCommitment,
+                    previousCommitmentMP.witness
+                ),
+                "Commitment not present in batch"
             );
         }
 
         bytes32 updatedBalanceRoot;
         bool isDisputeValid;
-        (updatedBalanceRoot, isDisputeValid) = rollupReddit.processBatch(
-            commitmentMP.commitment.stateRoot,
-            commitmentMP.commitment.txs,
+        (updatedBalanceRoot, isDisputeValid) = rollupReddit
+            .processBatch(
+            previousCommitmentMP.commitment.stateRoot,
+            previousCommitmentMP.commitment.txs,
             accountProofs,
-            commitmentMP.commitment.batchType
+            fraudulentCommitmentMP.commitment.batchType
         );
 
         // dispute is valid, we need to slash and rollback :(
@@ -386,7 +414,7 @@ contract Rollup is RollupHelpers {
 
         // if new root doesnt match what was submitted by coordinator
         // slash and rollback
-        if (updatedBalanceRoot != commitmentMP.commitment.stateRoot) {
+        if (updatedBalanceRoot != fraudulentCommitmentMP.commitment.stateRoot) {
             invalidBatchMarker = _batch_id;
             SlashAndRollback();
             return;
