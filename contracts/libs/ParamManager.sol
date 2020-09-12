@@ -16,6 +16,10 @@ library ParamManager {
     function POB() public pure returns (bytes32) {
         return keccak256("pob");
     }
+    
+    function BURNAUCTION() public pure returns (bytes32) {
+        return keccak256("burnauction");
+    }
 
     function Governance() public pure returns (bytes32) {
         return keccak256("governance");

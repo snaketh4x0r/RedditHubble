@@ -11,6 +11,7 @@ import { RollupUtils } from "./libs/RollupUtils.sol";
 import { BLSAccountRegistry } from "./BLSAccountRegistry.sol";
 import { Logger } from "./Logger.sol";
 import { POB } from "./POB.sol";
+import { BurnAuction } from "./BurnAuction.sol";
 import { MerkleTreeUtils as MTUtils } from "./MerkleTreeUtils.sol";
 import { NameRegistry as Registry } from "./NameRegistry.sol";
 import { Governance } from "./Governance.sol";
@@ -63,10 +64,12 @@ contract RollupSetup {
     uint256 public invalidBatchMarker;
 
     modifier onlyCoordinator() {
-        POB pobContract = POB(
-            nameRegistry.getContractDetails(ParamManager.POB())
+        address submitter;        
+        BurnAuction burnAuction = BurnAuction(
+            nameRegistry.getContractDetails(ParamManager.BURNAUCTION())
         );
-        assert(msg.sender == pobContract.getCoordinator());
+        (submitter) = burnAuction.getCurrentWinner();
+        assert(msg.sender == submitter);
         _;
     }
 
@@ -190,6 +193,7 @@ contract Rollup is RollupHelpers {
         governance = Governance(
             nameRegistry.getContractDetails(ParamManager.Governance())
         );
+
         merkleUtils = MTUtils(
             nameRegistry.getContractDetails(ParamManager.MERKLE_UTILS())
         );
